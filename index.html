@@ -880,7 +880,6 @@
       let tables = [];
       let currentView = "table";
       let tablePositions = {};
-
       // Initialize the application
       function initApp() {
         // Get DOM elements
@@ -901,10 +900,8 @@
         trashArea = document.getElementById("trashArea");
         tableViewBtn = document.getElementById("tableView");
         floorPlanViewBtn = document.getElementById("floorPlanView");
-
         // Load data from localStorage if available
         loadData();
-
         // Attach event listeners
         if (addTableBtn) {
           addTableBtn.addEventListener("click", addTable);
@@ -930,7 +927,15 @@
         if (floorPlanViewBtn) {
           floorPlanViewBtn.addEventListener("click", switchToFloorPlanView);
         }
-
+        
+        // Listen for guest data changes from the Guest Manager
+        window.addEventListener('guestDataChanged', (event) => {
+          // Reload data from localStorage
+          loadData();
+          // Update the unassigned guests list
+          updateUnassignedGuests();
+        });
+        
         // Trash area functionality
         if (trashArea) {
           trashArea.addEventListener("dragover", (e) => {
@@ -975,7 +980,6 @@
           });
         }
       }
-
       // Load data from localStorage if available
       function loadData() {
         try {
@@ -991,7 +995,6 @@
           console.error("Error loading data from localStorage:", error);
         }
       }
-
       // Save data to localStorage
       function saveData() {
         try {
@@ -1008,7 +1011,6 @@
           );
         }
       }
-
       // Function to renumber tables after deletion
       function renumberTables() {
         // Find all auto-named tables (pattern: "Table X")
@@ -1055,7 +1057,6 @@
         // Save the updated data
         saveData();
       }
-
       // Function to calculate position for new table in floor plan
       function calculateNewTablePosition() {
         // Grid layout for initial positioning
@@ -1074,7 +1075,6 @@
           top: startY + row * tableHeight,
         };
       }
-
       // Render loaded data
       function renderData() {
         console.log("Rendering data...");
@@ -1216,7 +1216,6 @@
         // Update table positions
         tablePositions = weddingData.tablePositions || {};
       }
-
       // Show notification
       function showNotification(message, type = "success") {
         if (notification && notificationText) {
@@ -1235,7 +1234,6 @@
           }, 3000);
         }
       }
-
       // Toggle FAB menu
       function toggleFabMenu() {
         if (fabMenu) {
@@ -1246,7 +1244,6 @@
           }
         }
       }
-
       // Function to rebuild tables container from data model
       function rebuildTablesContainer() {
         // Clear the tables container
@@ -1418,7 +1415,6 @@
         
         updateGuestCount();
       }
-
       // Create table function
       function createTable(num, name = "", saveToData = true) {
         const table = document.createElement("div");
@@ -1541,7 +1537,6 @@
         }
         showNotification(`Table "${title.textContent}" created`);
       }
-
       // Update guest count for tables
       function updateGuestCount() {
         tables.forEach((table) => {
@@ -1577,7 +1572,6 @@
           }
         });
       }
-
       // Event handlers
       function addTable() {
         if (!tableNameInput) return;
@@ -1587,7 +1581,6 @@
           tableNameInput.value = "";
         }
       }
-
       function searchGuests(e) {
         const searchTerm = e.target.value.toLowerCase();
         if (!guestList) return;
@@ -1603,7 +1596,6 @@
           }
         });
       }
-
       // Export PDF
       function exportSeatingChartPDF() {
         try {
@@ -1664,7 +1656,6 @@
           showNotification("Error generating seating chart. Please try again.", "error");
         }
       }
-
       // Generate Place Cards
       function generatePlaceCardsPDF() {
         try {
@@ -1713,7 +1704,6 @@
           showNotification("Error generating place cards. Please try again.", "error");
         }
       }
-
       // Reset all data - NO CONFIRMATION
       function resetAll() {
         // Clear data model
@@ -1759,7 +1749,6 @@
         
         showNotification("All data has been reset");
       }
-
       // View toggle functionality
       function switchToTableView() {
         if (currentView === "table") return;
@@ -1796,4 +1785,145 @@
         const instructions = document.createElement("div");
         instructions.className = "floor-plan-instructions";
         instructions.innerHTML =
-          '<i class="fas
+          '<i class="fas fa-info-circle"></i> Drag tables to arrange your floor plan';
+        floorPlan.appendChild(instructions);
+        
+        // Add tables to floor plan
+        weddingData.tables.forEach((tableData) => {
+          const table = document.createElement("div");
+          table.className = "floor-plan-table";
+          table.dataset.tableName = tableData.name;
+          
+          // Set position from saved data or calculate new position
+          const position =
+            tablePositions[tableData.name] || calculateNewTablePosition();
+          table.style.left = position.left + "px";
+          table.style.top = position.top + "px";
+          
+          const tableName = document.createElement("div");
+          tableName.className = "floor-plan-table-name";
+          tableName.textContent = tableData.name;
+          
+          const tableCount = document.createElement("div");
+          tableCount.className = "floor-plan-table-count";
+          tableCount.textContent = tableData.guests ? tableData.guests.length : 0;
+          
+          table.appendChild(tableName);
+          table.appendChild(tableCount);
+          
+          // Make table draggable
+          let isDragging = false;
+          let startX, startY, initialLeft, initialTop;
+          
+          table.addEventListener("mousedown", (e) => {
+            isDragging = true;
+            table.classList.add("dragging");
+            startX = e.clientX;
+            startY = e.clientY;
+            initialLeft = parseInt(table.style.left);
+            initialTop = parseInt(table.style.top);
+          });
+          
+          document.addEventListener("mousemove", (e) => {
+            if (!isDragging) return;
+            
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            
+            table.style.left = initialLeft + dx + "px";
+            table.style.top = initialTop + dy + "px";
+          });
+          
+          document.addEventListener("mouseup", () => {
+            if (isDragging) {
+              isDragging = false;
+              table.classList.remove("dragging");
+              
+              // Save position
+              tablePositions[tableData.name] = {
+                left: parseInt(table.style.left),
+                top: parseInt(table.style.top),
+              };
+              weddingData.tablePositions = tablePositions;
+              saveData();
+            }
+          });
+          
+          floorPlan.appendChild(table);
+        });
+        
+        // Replace tables container with floor plan
+        const rightPanel = document.querySelector(".right-panel .panel");
+        if (rightPanel && tablesContainer) {
+          rightPanel.replaceChild(floorPlan, tablesContainer);
+        }
+        showNotification("Switched to floor plan view");
+      }
+      
+      // Function to update the unassigned guests list
+      function updateUnassignedGuests() {
+        if (!guestList || !emptyGuestList) return;
+        
+        // Clear the current guest list
+        guestList.innerHTML = '';
+        
+        // Add empty state back
+        guestList.appendChild(emptyGuestList);
+        
+        // Create a set of all assigned guests
+        const assignedGuests = new Set();
+        weddingData.tables.forEach(table => {
+          if (table.guests) {
+            table.guests.forEach(guest => assignedGuests.add(guest));
+          }
+        });
+        
+        // Only show unassigned guests
+        const unassignedGuests = weddingData.guests.filter(
+          guest => !assignedGuests.has(guest.name)
+        );
+        
+        if (unassignedGuests.length > 0) {
+          emptyGuestList.style.display = "none";
+          unassignedGuests.forEach((guest) => {
+            // Add to guest list
+            const guestItem = document.createElement("div");
+            guestItem.className = "guest-item";
+            guestItem.draggable = true;
+            guestItem.dataset.name = guest.name;
+            guestItem.dataset.side = guest.side;
+            guestItem.dataset.rsvp = guest.rsvp;
+            guestItem.innerHTML = `
+              <div class="guest-name">${guest.name}</div>
+              <div class="guest-info">
+                <span class="guest-side ${guest.side.toLowerCase()}">${guest.side}</span>
+              </div>
+            `;
+            guestItem.addEventListener("dragstart", (e) => {
+              e.dataTransfer.setData(
+                "text/plain",
+                JSON.stringify({
+                  name: guest.name,
+                  side: guest.side,
+                  rsvp: guest.rsvp,
+                })
+              );
+              if (trashArea) {
+                trashArea.classList.add("active");
+              }
+            });
+            guestItem.addEventListener("dragend", () => {
+              if (trashArea) {
+                trashArea.classList.remove("active");
+              }
+            });
+            guestList.appendChild(guestItem);
+          });
+        }
+      }
+      
+      // Initialize the app when DOM is loaded
+      document.addEventListener("DOMContentLoaded", initApp);
+    </script>
+  </body>
+</html>

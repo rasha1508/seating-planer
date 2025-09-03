@@ -1,0 +1,1956 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Wedding Seating Planner</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@400;600;700&family=Dancing+Script:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      :root {
+        /* Elegant wedding color palette */
+        --primary-color: #d4a5a5; /* Soft pink */
+        --secondary-color: #f2e6e6; /* Light pink */
+        --accent-color: #f9f2f2; /* Very light pink */
+        --tertiary-color: #e6d7d7; /* Muted pink */
+        --beige-color: #f5f0e6; /* Soft beige */
+        --text-color: #6d4c41; /* Warm brown */
+        --light-text: #8d6e63; /* Lighter warm brown */
+        --background-color: transparent; /* Transparent for Notion */
+        --card-background: rgba(
+          255,
+          255,
+          255,
+          0.9
+        ); /* Semi-transparent white */
+        --border-color: rgba(212, 165, 165, 0.3);
+        --success-color: #a5d6a7;
+        --error-color: #ef9a9a;
+        --warning-color: #ffcc80;
+        --shadow-light: 0 2px 4px rgba(212, 165, 165, 0.1);
+        --shadow-medium: 0 4px 8px rgba(212, 165, 165, 0.15);
+        --shadow-heavy: 0 8px 16px rgba(212, 165, 165, 0.2);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          Roboto, sans-serif;
+        background-color: var(--background-color);
+        margin: 0;
+        padding: 10px;
+        color: var(--text-color);
+        line-height: 1.4;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+      .app-container {
+        max-width: 100%;
+        margin: 0 auto;
+        padding: 0;
+      }
+      h1 {
+        text-align: center;
+        color: var(--text-color);
+        font-family: "Dancing Script", cursive;
+        font-weight: 700;
+        margin: 10px 0;
+        font-size: 32px;
+        position: relative;
+        padding-bottom: 10px;
+      }
+      h1::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100px;
+        height: 3px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          var(--primary-color),
+          transparent
+        );
+      }
+      .main-container {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        max-width: 100%;
+      }
+      .left-panel,
+      .right-panel {
+        width: 100%;
+      }
+      .panel {
+        background-color: var(--card-background);
+        border-radius: 12px;
+        padding: 15px;
+        box-shadow: var(--shadow-light);
+        margin-bottom: 15px;
+        border: 1px solid var(--border-color);
+        position: relative;
+        overflow: hidden;
+        backdrop-filter: blur(10px);
+      }
+      .panel::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: linear-gradient(
+          90deg,
+          var(--primary-color),
+          var(--secondary-color)
+        );
+      }
+      .form-group {
+        margin-bottom: 12px;
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 500;
+        color: var(--light-text);
+        font-size: 13px;
+      }
+      input,
+      select,
+      button {
+        width: 100%;
+        padding: 8px 10px;
+        margin-top: 3px;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        font-size: 13px;
+        font-family: "Inter", sans-serif;
+        transition: all 0.3s ease;
+        box-sizing: border-box;
+      }
+      input:focus,
+      select:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(212, 165, 165, 0.2);
+      }
+      button {
+        background-color: var(--primary-color);
+        color: white;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: none;
+        margin-top: 8px;
+        padding: 8px 10px;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+      }
+      button:hover {
+        background-color: #c89292;
+      }
+      button:active {
+        transform: translateY(0);
+      }
+      .secondary-btn {
+        background-color: var(--secondary-color);
+        color: var(--primary-color);
+      }
+      .secondary-btn:hover {
+        background-color: #e6d0d0;
+      }
+      button.active {
+        background-color: var(--primary-color);
+        color: white;
+      }
+      /* Guest List Styling */
+      .guest-list-container {
+        margin-top: 15px;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        background-color: var(--card-background);
+        overflow: hidden;
+        box-shadow: var(--shadow-light);
+      }
+      .guest-list-header {
+        background-color: var(--accent-color);
+        padding: 8px 12px;
+        font-weight: 600;
+        color: var(--light-text);
+        border-bottom: 1px solid var(--border-color);
+        font-size: 13px;
+      }
+      .guest-list {
+        max-height: 150px;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: var(--primary-color) var(--accent-color);
+      }
+      .guest-list::-webkit-scrollbar {
+        width: 6px;
+      }
+      .guest-list::-webkit-scrollbar-track {
+        background: var(--accent-color);
+        border-radius: 3px;
+      }
+      .guest-list::-webkit-scrollbar-thumb {
+        background-color: var(--primary-color);
+        border-radius: 3px;
+      }
+      .guest-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--border-color);
+        transition: background-color 0.3s;
+      }
+      .guest-item:last-child {
+        border-bottom: none;
+      }
+      .guest-item:hover {
+        background-color: var(--accent-color);
+      }
+      .guest-name {
+        flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 12px;
+      }
+      .guest-info {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-left: 8px;
+      }
+      .guest-side {
+        font-size: 10px;
+        padding: 2px 5px;
+        border-radius: 12px;
+        font-weight: 500;
+      }
+      .side-bride {
+        background-color: rgba(255, 182, 193, 0.3);
+        color: #d63384;
+      }
+      .side-groom {
+        background-color: rgba(173, 216, 230, 0.3);
+        color: #0d6efd;
+      }
+      .side-couple {
+        background-color: rgba(204, 153, 255, 0.3);
+        color: #6f42c1;
+      }
+      .side-other {
+        background-color: rgba(211, 211, 211, 0.3);
+        color: #6c757d;
+      }
+      .edit-guest,
+      .delete-guest {
+        background: none;
+        border: none;
+        color: var(--primary-color);
+        cursor: pointer;
+        font-size: 12px;
+        padding: 0;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.3s;
+      }
+      .edit-guest:hover,
+      .delete-guest:hover {
+        background-color: rgba(212, 165, 165, 0.1);
+      }
+      /* View Toggle */
+      .view-toggle {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 15px;
+      }
+      /* Table Card Styles - Round tables */
+      .table-card {
+        position: relative;
+        width: 160px;
+        height: 160px;
+        border-radius: 50%;
+        background-color: var(--card-background);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 15px;
+        flex-shrink: 0;
+        box-shadow: var(--shadow-light);
+        border: 1px solid var(--border-color);
+        transition: all 0.3s ease;
+        overflow: hidden;
+        margin: 0 auto 15px;
+      }
+      .table-card:hover {
+        box-shadow: var(--shadow-medium);
+        transform: translateY(-3px);
+      }
+      .table-header {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        margin-bottom: 8px;
+      }
+      .table-card h3 {
+        margin: 0;
+        font-family: "Playfair Display", serif;
+        font-size: 14px;
+        color: var(--text-color);
+        text-align: center;
+        flex-grow: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-weight: 600;
+      }
+      .guest-count {
+        font-size: 11px;
+        background-color: var(--secondary-color);
+        color: var(--primary-color);
+        border-radius: 12px;
+        padding: 2px 6px;
+        font-weight: 500;
+        flex-shrink: 0;
+        margin-top: 3px;
+      }
+      .floor-plan-delete-table {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background: white;
+        border: 1px solid var(--border-color);
+        color: var(--light-text);
+        cursor: pointer;
+        font-size: 10px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s;
+        z-index: 20;
+        box-shadow: var(--shadow-light);
+      }
+      .floor-plan-delete-table:hover {
+        background: white;
+        color: var(--error-color);
+        transform: scale(1.1);
+        box-shadow: var(--shadow-medium);
+      }
+      .table-card ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        position: relative;
+      }
+      .table-card ul li {
+        font-size: 9px;
+        margin: 2px;
+        padding: 6px;
+        border-radius: 50%;
+        text-align: center;
+        cursor: grab;
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        flex-shrink: 0;
+        position: relative;
+        font-weight: 500;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .table-card ul li.bride {
+        background-color: rgba(255, 182, 193, 0.4);
+        color: #d63384;
+      }
+      .table-card ul li.groom {
+        background-color: rgba(173, 216, 230, 0.4);
+        color: #0d6efd;
+      }
+      .table-card ul li.other {
+        background-color: rgba(211, 211, 211, 0.4);
+        color: #6c757d;
+      }
+      .table-card ul li:hover {
+        transform: scale(1.1);
+        box-shadow: var(--shadow-medium);
+        z-index: 5;
+      }
+      .table-card ul li:hover::after {
+        content: attr(data-fullname) " | " attr(data-side) " | RSVP: "
+          attr(data-rsvp);
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: var(--card-background);
+        color: var(--text-color);
+        padding: 6px 8px;
+        border-radius: 6px;
+        font-size: 10px;
+        white-space: nowrap;
+        box-shadow: var(--shadow-medium);
+        z-index: 10;
+        margin-bottom: 6px;
+        border: 1px solid var(--border-color);
+        max-width: 120px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        color: var(--light-text);
+        text-align: center;
+      }
+      .empty-state i {
+        font-size: 32px;
+        margin-bottom: 10px;
+        opacity: 0.5;
+      }
+      .empty-state p {
+        font-size: 14px;
+        max-width: 180px;
+        line-height: 1.3;
+      }
+      .fab {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background-color: var(--primary-color);
+        color: white;
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        cursor: pointer;
+        box-shadow: var(--shadow-medium);
+        transition: all 0.3s ease;
+        z-index: 1000;
+      }
+      .fab:hover {
+        background-color: #c89292;
+        transform: scale(1.05);
+      }
+      .fab-menu {
+        position: fixed;
+        bottom: 75px;
+        right: 20px;
+        display: none;
+        flex-direction: column;
+        gap: 10px;
+        z-index: 1000;
+      }
+      .fab-menu.show {
+        display: flex;
+        animation: slideUp 0.3s ease;
+      }
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .fab-menu button {
+        background-color: white;
+        border: 1px solid var(--border-color);
+        padding: 10px 12px;
+        border-radius: 8px;
+        color: var(--text-color);
+        font-size: 13px;
+        width: 140px;
+        box-shadow: var(--shadow-light);
+        text-align: left;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+      }
+      .fab-menu button:hover {
+        background-color: var(--accent-color);
+        transform: translateX(-5px);
+      }
+      .fab-menu button i {
+        color: var(--primary-color);
+        font-size: 14px;
+      }
+      .notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background-color: white;
+        color: var(--text-color);
+        padding: 12px 16px;
+        border-radius: 8px;
+        box-shadow: var(--shadow-medium);
+        border-left: 4px solid var(--primary-color);
+        z-index: 2000;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transform: translateX(120%);
+        transition: transform 0.3s ease;
+      }
+      .notification.show {
+        transform: translateX(0);
+      }
+      .notification i {
+        color: var(--primary-color);
+        font-size: 16px;
+      }
+      .notification.success {
+        border-left-color: var(--success-color);
+      }
+      .notification.success i {
+        color: var(--success-color);
+      }
+      .notification.error {
+        border-left-color: var(--error-color);
+      }
+      .notification.error i {
+        color: var(--error-color);
+      }
+      /* Trash Area Styling */
+      .trash-area {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        width: 48px;
+        height: 48px;
+        background-color: var(--error-color);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: var(--shadow-medium);
+        transition: all 0.3s ease;
+        z-index: 999;
+        opacity: 0.8;
+      }
+      .trash-area.active {
+        background-color: #d63447;
+        transform: scale(1.1);
+        opacity: 1;
+      }
+      .trash-area i {
+        font-size: 20px;
+        color: white;
+      }
+      .trash-area span {
+        position: absolute;
+        bottom: -20px;
+        background-color: #721c24;
+        color: white;
+        padding: 3px 6px;
+        border-radius: 4px;
+        font-size: 11px;
+        white-space: nowrap;
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+      .trash-area:hover span {
+        opacity: 1;
+      }
+      /* Floor Plan Styles */
+      .floor-plan {
+        width: 100%;
+        height: 400px;
+        background-color: var(--accent-color);
+        border-radius: 8px;
+        position: relative;
+        margin-bottom: 15px;
+        overflow: hidden;
+        box-shadow: var(--shadow-light);
+      }
+      .floor-plan-table {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--card-background);
+        border: 1px solid var(--border-color);
+        cursor: move;
+        transition: all 0.3s ease;
+        position: absolute;
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        user-select: none;
+        box-shadow: var(--shadow-light);
+      }
+      .floor-plan-table:hover {
+        box-shadow: var(--shadow-medium);
+      }
+      .floor-plan-table.dragging {
+        opacity: 0.8;
+        transform: scale(1.05);
+        z-index: 1000;
+        box-shadow: var(--shadow-heavy);
+      }
+      .floor-plan-table-name {
+        font-family: "Inter", sans-serif;
+        font-size: 10px;
+        color: var(--text-color);
+        text-align: center;
+        margin-bottom: 3px;
+        font-weight: 600;
+      }
+      .floor-plan-table-count {
+        font-size: 8px;
+        background-color: var(--primary-color);
+        color: white;
+        border-radius: 12px;
+        padding: 1px 5px;
+        font-weight: 500;
+      }
+      /* Floor Plan Instructions */
+      .floor-plan-instructions {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background-color: rgba(255, 255, 255, 0.9);
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-size: 11px;
+        color: var(--light-text);
+        z-index: 100;
+        box-shadow: var(--shadow-light);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .tables-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 15px;
+        padding-bottom: 10px;
+      }
+      /* For Notion embed optimization */
+      @media (min-width: 769px) {
+        .main-container {
+          flex-direction: row;
+        }
+        .left-panel {
+          width: 300px;
+        }
+        .right-panel {
+          flex: 1;
+        }
+      }
+      @media (max-width: 768px) {
+        .app-container {
+          padding: 0 5px;
+        }
+        h1 {
+          font-size: 24px;
+        }
+        .table-card {
+          width: 140px;
+          height: 140px;
+          padding: 12px;
+        }
+        .table-card ul li {
+          font-size: 8px;
+          width: 24px;
+          height: 24px;
+          padding: 5px;
+        }
+        input,
+        select,
+        button {
+          font-size: 12px;
+          padding: 7px 9px;
+        }
+        .fab-menu button {
+          width: 130px;
+          font-size: 12px;
+        }
+        .trash-area {
+          width: 42px;
+          height: 42px;
+          bottom: 15px;
+          left: 15px;
+        }
+        .trash-area i {
+          font-size: 18px;
+        }
+        .floor-plan {
+          height: 300px;
+        }
+        .floor-plan-instructions {
+          font-size: 10px;
+          padding: 5px 8px;
+        }
+        .fab {
+          width: 42px;
+          height: 42px;
+          bottom: 15px;
+          right: 15px;
+        }
+        .fab i {
+          font-size: 18px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-container">
+      <h1>Wedding Seating Planner</h1>
+      <div class="main-container">
+        <div class="left-panel">
+          <div class="panel">
+            <h2
+              style="
+                margin-top: 0;
+                color: var(--text-color);
+                font-size: 18px;
+                font-weight: 600;
+                font-family: 'Playfair Display', serif;
+              "
+            >
+              Unassigned Guests
+            </h2>
+            <div class="guest-list-container">
+              <div class="guest-list-header">Drag guests to tables</div>
+              <div
+                class="form-group"
+                style="margin-top: 10px; margin-bottom: 0; padding: 0 12px"
+              >
+                <div style="position: relative">
+                  <input
+                    type="text"
+                    id="searchGuests"
+                    placeholder="Search guests..."
+                    style="padding-left: 32px"
+                  />
+                  <i
+                    class="fas fa-search"
+                    style="
+                      position: absolute;
+                      left: 12px;
+                      top: 50%;
+                      transform: translateY(-50%);
+                      color: var(--primary-color);
+                    "
+                  ></i>
+                </div>
+              </div>
+              <div class="guest-list" id="guestList">
+                <div id="emptyGuestList" class="empty-state">
+                  <i class="fas fa-users"></i>
+                  <p>No guests added yet</p>
+                </div>
+              </div>
+            </div>
+            <h2
+              style="
+                margin-top: 20px;
+                color: var(--text-color);
+                font-size: 18px;
+                font-weight: 600;
+                font-family: 'Playfair Display', serif;
+              "
+            >
+              Add Table
+            </h2>
+            <div class="form-group">
+              <label for="tableNameInput">Table Name (optional)</label>
+              <input
+                type="text"
+                id="tableNameInput"
+                placeholder="e.g. Family Table"
+              />
+            </div>
+            <button id="addTable">
+              <i class="fas fa-plus-circle"></i> Add Table
+            </button>
+            <div
+              style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 15px"
+            >
+              <button id="exportPDF" class="secondary-btn">
+                <i class="fas fa-file-pdf"></i> Export PDF
+              </button>
+              <button id="generatePlaceCards" class="secondary-btn">
+                <i class="fas fa-id-card"></i> Place Cards
+              </button>
+              <button id="resetAll" class="secondary-btn">
+                <i class="fas fa-redo"></i> Reset All
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="right-panel">
+          <!-- Seating Arrangement Section -->
+          <div class="panel">
+            <h2
+              style="
+                margin-top: 0;
+                color: var(--text-color);
+                font-size: 18px;
+                font-weight: 600;
+                font-family: 'Playfair Display', serif;
+              "
+            >
+              Seating Arrangement
+            </h2>
+            <!-- View Toggle -->
+            <div class="view-toggle">
+              <button id="tableView" class="secondary-btn active">
+                <i class="fas fa-th"></i> Table View
+              </button>
+              <button id="floorPlanView" class="secondary-btn">
+                <i class="fas fa-map"></i> Floor Plan
+              </button>
+            </div>
+            <div class="tables-container" id="tablesContainer">
+              <div id="emptyTables" class="empty-state" style="width: 100%">
+                <i class="fas fa-chair"></i>
+                <p>
+                  No tables created yet. Add your first table to get started!
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Trash Area -->
+    <div class="trash-area" id="trashArea">
+      <i class="fas fa-trash-alt"></i>
+      <span>Drop here to delete</span>
+    </div>
+    <div class="fab" id="fab">
+      <i class="fas fa-plus"></i>
+    </div>
+    <div class="fab-menu" id="fabMenu">
+      <button onclick="document.getElementById('addTable').click()">
+        <i class="fas fa-plus-circle"></i> Add Table
+      </button>
+      <button onclick="document.getElementById('exportPDF').click()">
+        <i class="fas fa-file-pdf"></i> Export PDF
+      </button>
+      <button onclick="document.getElementById('generatePlaceCards').click()">
+        <i class="fas fa-id-card"></i> Place Cards
+      </button>
+    </div>
+    <div class="notification" id="notification">
+      <i class="fas fa-check-circle"></i>
+      <span id="notificationText">Notification text</span>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>
+      // Initialize data from localStorage or set defaults
+      let weddingData = {
+        guests: [],
+        tables: [],
+        tablePositions: {},
+      };
+
+      // DOM Elements
+      const tablesContainer = document.getElementById("tablesContainer");
+      const addTableBtn = document.getElementById("addTable");
+      const guestList = document.getElementById("guestList");
+      const exportPDFBtn = document.getElementById("exportPDF");
+      const generatePlaceCardsBtn =
+        document.getElementById("generatePlaceCards");
+      const resetAllBtn = document.getElementById("resetAll");
+      const tableNameInput = document.getElementById("tableNameInput");
+      const searchGuestsInput = document.getElementById("searchGuests");
+      const fab = document.getElementById("fab");
+      const fabMenu = document.getElementById("fabMenu");
+      const emptyGuestList = document.getElementById("emptyGuestList");
+      const emptyTables = document.getElementById("emptyTables");
+      const notification = document.getElementById("notification");
+      const notificationText = document.getElementById("notificationText");
+      const trashArea = document.getElementById("trashArea");
+      const tableViewBtn = document.getElementById("tableView");
+      const floorPlanViewBtn = document.getElementById("floorPlanView");
+
+      let tables = [];
+      let currentView = "table";
+      let tablePositions = {};
+
+      // Load data from localStorage if available
+      function loadData() {
+        try {
+          const savedData = localStorage.getItem("weddingSeatingData");
+          if (savedData) {
+            weddingData = JSON.parse(savedData);
+            console.log("Data loaded from localStorage:", weddingData);
+            renderData();
+          } else {
+            console.log("No saved data found, using defaults");
+          }
+        } catch (error) {
+          console.error("Error loading data from localStorage:", error);
+        }
+      }
+
+      // Save data to localStorage
+      function saveData() {
+        try {
+          localStorage.setItem(
+            "weddingSeatingData",
+            JSON.stringify(weddingData)
+          );
+          console.log("Data saved to localStorage:", weddingData);
+        } catch (error) {
+          console.error("Error saving data to localStorage:", error);
+          showNotification(
+            "Error saving data. Your browser may not support local storage.",
+            "error"
+          );
+        }
+      }
+
+      // Function to renumber tables after deletion
+      function renumberTables() {
+        // Find all auto-named tables (pattern: "Table X")
+        const autoNamedTables = weddingData.tables.filter((table) =>
+          /^Table \d+$/.test(table.name)
+        );
+        // Sort by the number in the name
+        autoNamedTables.sort((a, b) => {
+          const numA = parseInt(a.name.split(" ")[1]);
+          const numB = parseInt(b.name.split(" ")[1]);
+          return numA - numB;
+        });
+        // Renumber starting from 1
+        autoNamedTables.forEach((table, index) => {
+          const oldName = table.name;
+          const newName = `Table ${index + 1}`;
+          // Update the table name in the data model
+          table.name = newName;
+          // Update table positions if they exist
+          if (weddingData.tablePositions[oldName]) {
+            weddingData.tablePositions[newName] =
+              weddingData.tablePositions[oldName];
+            delete weddingData.tablePositions[oldName];
+          }
+          // Update DOM in table view if it exists
+          const tableElement = tables.find(
+            (t) =>
+              t.querySelector("h3") &&
+              t.querySelector("h3").textContent === oldName
+          );
+          if (tableElement) {
+            tableElement.querySelector("h3").textContent = newName;
+          }
+          // Update DOM in floor plan view if it exists
+          const floorPlanTable = document.querySelector(
+            `.floor-plan-table[data-table-name="${oldName}"]`
+          );
+          if (floorPlanTable) {
+            floorPlanTable.dataset.tableName = newName;
+            floorPlanTable.querySelector(".floor-plan-table-name").textContent =
+              newName;
+          }
+        });
+        // Save the updated data
+        saveData();
+      }
+
+      // Function to calculate position for new table in floor plan
+      function calculateNewTablePosition() {
+        // Grid layout for initial positioning
+        const cols = 3;
+        const tableWidth = 100; // Including margin
+        const tableHeight = 100; // Including margin
+        const startX = 30;
+        const startY = 80;
+        // Count existing tables
+        const existingTables = weddingData.tables.length;
+        // Calculate position in grid
+        const row = Math.floor(existingTables / cols);
+        const col = existingTables % cols;
+        return {
+          left: startX + col * tableWidth,
+          top: startY + row * tableHeight,
+        };
+      }
+
+      // Render loaded data
+      function renderData() {
+        console.log("Rendering data...");
+        // Clear existing data
+        guestList.innerHTML = "";
+        tablesContainer.innerHTML = "";
+        tables = [];
+
+        // Add empty states
+        guestList.appendChild(emptyGuestList);
+        tablesContainer.appendChild(emptyTables);
+
+        // Render unassigned guests
+        if (weddingData.guests && weddingData.guests.length > 0) {
+          console.log("Rendering guests:", weddingData.guests.length);
+
+          // Create a set of all assigned guests
+          const assignedGuests = new Set();
+          weddingData.tables.forEach((table) => {
+            if (table.guests) {
+              table.guests.forEach((guest) => assignedGuests.add(guest));
+            }
+          });
+
+          // Only show unassigned guests
+          const unassignedGuests = weddingData.guests.filter(
+            (guest) => !assignedGuests.has(guest.name)
+          );
+
+          if (unassignedGuests.length > 0) {
+            emptyGuestList.style.display = "none";
+            unassignedGuests.forEach((guest) => {
+              // Add to guest list
+              const guestItem = document.createElement("div");
+              guestItem.className = "guest-item";
+              guestItem.draggable = true;
+              guestItem.dataset.name = guest.name;
+              guestItem.dataset.side = guest.side;
+              guestItem.dataset.rsvp = guest.rsvp;
+              guestItem.innerHTML = `
+                <div class="guest-name">${guest.name}</div>
+                <div class="guest-info">
+                  <span class="guest-side ${guest.side.toLowerCase()}">${
+                guest.side
+              }</span>
+                </div>
+              `;
+              guestItem.addEventListener("dragstart", (e) => {
+                e.dataTransfer.setData(
+                  "text/plain",
+                  JSON.stringify({
+                    name: guest.name,
+                    side: guest.side,
+                    rsvp: guest.rsvp,
+                  })
+                );
+                trashArea.classList.add("active");
+              });
+              guestItem.addEventListener("dragend", () => {
+                trashArea.classList.remove("active");
+              });
+              guestList.appendChild(guestItem);
+            });
+          }
+        }
+
+        // Render tables
+        if (weddingData.tables && weddingData.tables.length > 0) {
+          console.log("Rendering tables:", weddingData.tables.length);
+          emptyTables.style.display = "none";
+          weddingData.tables.forEach((table, index) => {
+            createTable(index + 1, table.name, false);
+            // Add guests to table
+            const tableElement = tables[tables.length - 1];
+            const ul = tableElement.querySelector("ul");
+            if (table.guests && table.guests.length > 0) {
+              table.guests.forEach((guestName) => {
+                // Find guest data
+                const guestData = weddingData.guests.find(
+                  (g) => g.name === guestName
+                );
+                if (guestData) {
+                  // Create guest element
+                  const li = document.createElement("li");
+                  // Truncate long names to fit in circle
+                  const displayName =
+                    guestData.name.length > 6
+                      ? guestData.name.substring(0, 5) + "..."
+                      : guestData.name;
+                  li.textContent = displayName;
+                  li.draggable = true;
+                  li.dataset.name = guestData.name;
+                  li.dataset.fullname = guestData.name;
+                  li.dataset.side = guestData.side;
+                  li.dataset.rsvp = guestData.rsvp;
+                  li.classList.add(
+                    guestData.side === "Bride"
+                      ? "bride"
+                      : guestData.side === "Groom"
+                      ? "groom"
+                      : "other"
+                  );
+                  li.addEventListener("dragstart", (ev) => {
+                    ev.dataTransfer.setData(
+                      "text/plain",
+                      JSON.stringify(guestData)
+                    );
+                    trashArea.classList.add("active");
+                  });
+                  li.addEventListener("dragend", () => {
+                    trashArea.classList.remove("active");
+                  });
+                  ul.appendChild(li);
+                }
+              });
+            }
+            updateGuestCount();
+          });
+        }
+
+        // Update table positions
+        tablePositions = weddingData.tablePositions || {};
+      }
+
+      // Show notification
+      function showNotification(message, type = "success") {
+        notificationText.textContent = message;
+        notification.className = "notification show";
+        if (type === "success") {
+          notification.classList.add("success");
+          notification.querySelector("i").className = "fas fa-check-circle";
+        } else if (type === "error") {
+          notification.classList.add("error");
+          notification.querySelector("i").className =
+            "fas fa-exclamation-circle";
+        }
+        setTimeout(() => {
+          notification.classList.remove("show");
+        }, 3000);
+      }
+
+      // Toggle FAB menu
+      fab.addEventListener("click", () => {
+        fabMenu.classList.toggle("show");
+        fab.querySelector("i").classList.toggle("fa-plus");
+        fab.querySelector("i").classList.toggle("fa-times");
+      });
+
+      // Function to rebuild tables container from data model
+      function rebuildTablesContainer() {
+        // Clear the tables container
+        tablesContainer.innerHTML = "";
+        tables = [];
+
+        // If no tables, show empty state
+        if (weddingData.tables.length === 0) {
+          tablesContainer.appendChild(emptyTables);
+          emptyTables.style.display = "flex";
+          return;
+        }
+
+        // Rebuild each table
+        weddingData.tables.forEach((tableData, index) => {
+          // Create a new table element for table view
+          const table = document.createElement("div");
+          table.className = "table-card";
+          table.dataset.tableNumber = index + 1;
+          const header = document.createElement("div");
+          header.className = "table-header";
+          const title = document.createElement("h3");
+          title.textContent = tableData.name;
+          const count = document.createElement("div");
+          count.className = "guest-count";
+          count.textContent = tableData.guests ? tableData.guests.length : 0;
+          header.appendChild(title);
+          header.appendChild(count);
+          table.appendChild(header);
+          const ul = document.createElement("ul");
+          table.appendChild(ul);
+
+          // Add guests to the table
+          if (tableData.guests && tableData.guests.length > 0) {
+            tableData.guests.forEach((guestName) => {
+              // Find guest data
+              const guestData = weddingData.guests.find(
+                (g) => g.name === guestName
+              );
+              if (guestData) {
+                // Create guest element
+                const li = document.createElement("li");
+                const displayName =
+                  guestData.name.length > 6
+                    ? guestData.name.substring(0, 5) + "..."
+                    : guestData.name;
+                li.textContent = displayName;
+                li.draggable = true;
+                li.dataset.name = guestData.name;
+                li.dataset.fullname = guestData.name;
+                li.dataset.side = guestData.side;
+                li.dataset.rsvp = guestData.rsvp;
+                li.classList.add(
+                  guestData.side === "Bride"
+                    ? "bride"
+                    : guestData.side === "Groom"
+                    ? "groom"
+                    : "other"
+                );
+                li.addEventListener("dragstart", (ev) => {
+                  ev.dataTransfer.setData(
+                    "text/plain",
+                    JSON.stringify(guestData)
+                  );
+                  trashArea.classList.add("active");
+                });
+                li.addEventListener("dragend", () => {
+                  trashArea.classList.remove("active");
+                });
+                ul.appendChild(li);
+              }
+            });
+          }
+
+          // Add drop event listener
+          table.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            trashArea.classList.remove("active");
+          });
+
+          table.addEventListener("drop", (e) => {
+            e.preventDefault();
+            const data = JSON.parse(e.dataTransfer.getData("text/plain"));
+
+            // Check if table is full
+            const currentGuests = ul.querySelectorAll("li").length;
+            if (currentGuests >= 12) {
+              showNotification(
+                "Table capacity reached (12 guests max)",
+                "error"
+              );
+              return;
+            }
+
+            // Remove from guest list or other tables
+            const sourceElements = [
+              ...document.querySelectorAll(".guest-item, .table-card ul li"),
+            ];
+            sourceElements.forEach((el) => {
+              if (el.dataset.name === data.name) {
+                el.remove();
+              }
+            });
+
+            // Create guest element
+            const li = document.createElement("li");
+            const displayName =
+              data.name.length > 6
+                ? data.name.substring(0, 5) + "..."
+                : data.name;
+            li.textContent = displayName;
+            li.draggable = true;
+            li.dataset.name = data.name;
+            li.dataset.fullname = data.name;
+            li.dataset.side = data.side;
+            li.dataset.rsvp = data.rsvp;
+            li.classList.add(
+              data.side === "Bride"
+                ? "bride"
+                : data.side === "Groom"
+                ? "groom"
+                : "other"
+            );
+            li.addEventListener("dragstart", (ev) => {
+              ev.dataTransfer.setData("text/plain", JSON.stringify(data));
+              trashArea.classList.add("active");
+            });
+            li.addEventListener("dragend", () => {
+              trashArea.classList.remove("active");
+            });
+            ul.appendChild(li);
+
+            // Update data model
+            const tableName = title.textContent;
+            const tableIndex = weddingData.tables.findIndex(
+              (t) => t.name === tableName
+            );
+            if (tableIndex !== -1) {
+              if (!weddingData.tables[tableIndex].guests) {
+                weddingData.tables[tableIndex].guests = [];
+              }
+              weddingData.tables[tableIndex].guests.push(data.name);
+              saveData();
+            }
+
+            updateGuestCount();
+            showNotification(`${data.name} seated at ${title.textContent}`);
+          });
+
+          tablesContainer.appendChild(table);
+          tables.push(table);
+        });
+
+        updateGuestCount();
+      }
+
+      // Create table function
+      function createTable(num, name = "", saveToData = true) {
+        const table = document.createElement("div");
+        table.className = "table-card";
+        table.dataset.tableNumber = num;
+        const header = document.createElement("div");
+        header.className = "table-header";
+        const title = document.createElement("h3");
+        title.textContent = name || "Table " + num;
+        const count = document.createElement("div");
+        count.className = "guest-count";
+        count.textContent = "0";
+        header.appendChild(title);
+        header.appendChild(count);
+        table.appendChild(header);
+        const ul = document.createElement("ul");
+        table.appendChild(ul);
+
+        table.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          trashArea.classList.remove("active");
+        });
+
+        table.addEventListener("drop", (e) => {
+          e.preventDefault();
+          const data = JSON.parse(e.dataTransfer.getData("text/plain"));
+
+          // Check if table is full
+          const currentGuests = ul.querySelectorAll("li").length;
+          if (currentGuests >= 12) {
+            showNotification("Table capacity reached (12 guests max)", "error");
+            return;
+          }
+
+          // Remove from guest list or other tables
+          const sourceElements = [
+            ...document.querySelectorAll(".guest-item, .table-card ul li"),
+          ];
+          sourceElements.forEach((el) => {
+            if (el.dataset.name === data.name) {
+              el.remove();
+            }
+          });
+
+          // Create guest element
+          const li = document.createElement("li");
+          // Truncate long names to fit in circle
+          const displayName =
+            data.name.length > 6
+              ? data.name.substring(0, 5) + "..."
+              : data.name;
+          li.textContent = displayName;
+          li.draggable = true;
+          li.dataset.name = data.name;
+          li.dataset.fullname = data.name;
+          li.dataset.side = data.side;
+          li.dataset.rsvp = data.rsvp;
+          li.classList.add(
+            data.side === "Bride"
+              ? "bride"
+              : data.side === "Groom"
+              ? "groom"
+              : "other"
+          );
+          li.addEventListener("dragstart", (ev) => {
+            ev.dataTransfer.setData("text/plain", JSON.stringify(data));
+            trashArea.classList.add("active");
+          });
+          li.addEventListener("dragend", () => {
+            trashArea.classList.remove("active");
+          });
+          ul.appendChild(li);
+
+          // Update data model
+          const tableName = title.textContent;
+          const tableIndex = weddingData.tables.findIndex(
+            (t) => t.name === tableName
+          );
+          if (tableIndex !== -1) {
+            if (!weddingData.tables[tableIndex].guests) {
+              weddingData.tables[tableIndex].guests = [];
+            }
+            weddingData.tables[tableIndex].guests.push(data.name);
+            saveData();
+          }
+
+          updateGuestCount();
+          showNotification(`${data.name} seated at ${title.textContent}`);
+        });
+
+        tablesContainer.appendChild(table);
+        tables.push(table);
+
+        // Add to data model
+        if (saveToData) {
+          weddingData.tables.push({
+            name: name || "Table " + num,
+            guests: [],
+          });
+          saveData();
+        }
+
+        // Initialize position for floor plan with calculated position
+        const position = calculateNewTablePosition();
+        tablePositions[title.textContent] = position;
+        weddingData.tablePositions = tablePositions;
+        saveData();
+
+        // Hide empty state if visible
+        emptyTables.style.display = "none";
+        showNotification(`Table "${title.textContent}" created`);
+      }
+
+      // Update guest count for tables
+      function updateGuestCount() {
+        tables.forEach((table) => {
+          const count = table.querySelector("ul").querySelectorAll("li").length;
+          const countElement = table.querySelector(".guest-count");
+          countElement.textContent = count;
+
+          // Update capacity indicator
+          const capacity = 12; // Maximum guests per table
+          const percentage = (count / capacity) * 100;
+
+          // Remove existing capacity classes
+          table.classList.remove(
+            "low-capacity",
+            "medium-capacity",
+            "high-capacity",
+            "full-capacity"
+          );
+
+          // Add appropriate capacity class
+          if (percentage === 0) {
+            // No capacity class needed
+          } else if (percentage < 50) {
+            table.classList.add("low-capacity");
+          } else if (percentage < 80) {
+            table.classList.add("medium-capacity");
+          } else if (percentage < 100) {
+            table.classList.add("high-capacity");
+          } else {
+            table.classList.add("full-capacity");
+          }
+        });
+      }
+
+      // Event listeners
+      addTableBtn.addEventListener("click", () => {
+        const tableName = tableNameInput.value.trim();
+        createTable(tables.length + 1, tableName);
+        tableNameInput.value = "";
+      });
+
+      // Search guests
+      searchGuestsInput.addEventListener("input", (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        const guestItems = guestList.querySelectorAll(".guest-item");
+        guestItems.forEach((item) => {
+          const name = item.dataset.name.toLowerCase();
+          const side = item.dataset.side.toLowerCase();
+          if (name.includes(searchTerm) || side.includes(searchTerm)) {
+            item.style.display = "flex";
+          } else {
+            item.style.display = "none";
+          }
+        });
+      });
+
+      // Export PDF
+      exportPDFBtn.addEventListener("click", () => {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        let y = 20;
+
+        doc.setFont("Playfair Display", "normal");
+        doc.setFontSize(22);
+        doc.text("Wedding Seating Chart", 105, y, { align: "center" });
+        y += 15;
+
+        doc.setFont("Inter", "normal");
+        doc.setFontSize(12);
+        doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 105, y, {
+          align: "center",
+        });
+        y += 15;
+
+        // Add unassigned guests
+        const unassigned = Array.from(
+          guestList.querySelectorAll(".guest-item")
+        );
+        if (unassigned.length > 0) {
+          if (y > 250) {
+            doc.addPage();
+            y = 20;
+          }
+          doc.setFont("Playfair Display", "normal");
+          doc.setFontSize(16);
+          doc.text("Unassigned Guests", 20, y);
+          y += 8;
+          doc.setFont("Inter", "normal");
+          doc.setFontSize(12);
+          unassigned.forEach((item) => {
+            if (y > 270) {
+              doc.addPage();
+              y = 20;
+            }
+            doc.text(
+              `- ${item.dataset.name} (${item.dataset.side}, ${item.dataset.rsvp})`,
+              25,
+              y
+            );
+            y += 6;
+          });
+          y += 10;
+        }
+
+        if (tables.length === 0) {
+          if (y > 250) {
+            doc.addPage();
+            y = 20;
+          }
+          doc.setFontSize(14);
+          doc.text("No tables created yet.", 105, y, { align: "center" });
+        } else {
+          tables.forEach((table) => {
+            if (y > 250) {
+              doc.addPage();
+              y = 20;
+            }
+            const tableName = table.querySelector("h3").textContent;
+            const guests = table.querySelectorAll("li");
+            doc.setFont("Playfair Display", "normal");
+            doc.setFontSize(16);
+            doc.text(tableName, 20, y);
+            y += 8;
+            doc.setFont("Inter", "normal");
+            doc.setFontSize(12);
+            doc.text(`Guests: ${guests.length}`, 20, y);
+            y += 8;
+            guests.forEach((g) => {
+              if (y > 270) {
+                doc.addPage();
+                y = 20;
+              }
+              doc.text(
+                `- ${g.dataset.fullname} (${g.dataset.side}, ${g.dataset.rsvp})`,
+                25,
+                y
+              );
+              y += 6;
+            });
+            y += 10;
+          });
+        }
+
+        doc.save("Wedding-Seating-Chart.pdf");
+        showNotification("Seating chart exported successfully");
+      });
+
+      // Generate Place Cards
+      generatePlaceCardsBtn.addEventListener("click", () => {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        // Set up page dimensions
+        const pageWidth = doc.internal.pageSize.width;
+        const pageHeight = doc.internal.pageSize.height;
+
+        // Place card dimensions
+        const cardWidth = 90;
+        const cardHeight = 50;
+        const margin = 15;
+
+        // Track position
+        let x = margin;
+        let y = margin;
+        let cardCount = 0;
+
+        // Add title
+        doc.setFont("Playfair Display", "normal");
+        doc.setFontSize(18);
+        doc.text("Wedding Place Cards", pageWidth / 2, 10, { align: "center" });
+
+        // Generate place cards for all seated guests
+        tables.forEach((table) => {
+          const tableName = table.querySelector("h3").textContent;
+          const guests = table.querySelectorAll("li");
+          guests.forEach((guest) => {
+            // Check if we need a new page
+            if (y + cardHeight > pageHeight - margin) {
+              doc.addPage();
+              y = margin;
+            }
+
+            // Draw card border
+            doc.setDrawColor(212, 165, 165);
+            doc.setLineWidth(0.5);
+            doc.rect(x, y, cardWidth, cardHeight);
+
+            // Add guest name
+            doc.setFont("Playfair Display", "normal");
+            doc.setFontSize(14);
+            doc.text(guest.dataset.fullname, x + cardWidth / 2, y + 20, {
+              align: "center",
+            });
+
+            // Add table name
+            doc.setFont("Inter", "normal");
+            doc.setFontSize(10);
+            doc.text(`Table: ${tableName}`, x + cardWidth / 2, y + 35, {
+              align: "center",
+            });
+
+            // Update position
+            x += cardWidth + margin;
+            cardCount++;
+
+            // Move to next row if needed
+            if (x + cardWidth > pageWidth - margin) {
+              x = margin;
+              y += cardHeight + margin;
+            }
+          });
+        });
+
+        if (cardCount === 0) {
+          doc.setFontSize(14);
+          doc.text("No seated guests found.", pageWidth / 2, pageHeight / 2, {
+            align: "center",
+          });
+        }
+
+        doc.save("Wedding-Place-Cards.pdf");
+        showNotification("Place cards generated successfully");
+      });
+
+      // Reset all data
+      resetAllBtn.addEventListener("click", () => {
+        if (
+          confirm(
+            "Are you sure you want to reset all data? This cannot be undone."
+          )
+        ) {
+          // Clear data model
+          weddingData = {
+            guests: [],
+            tables: [],
+            tablePositions: {},
+          };
+          saveData();
+
+          // Clear guest list
+          guestList.innerHTML = "";
+          guestList.appendChild(emptyGuestList);
+          emptyGuestList.style.display = "flex";
+
+          // Clear tables
+          tablesContainer.innerHTML = "";
+          tables = [];
+          tablePositions = {};
+          tablesContainer.appendChild(emptyTables);
+          emptyTables.style.display = "flex";
+
+          // Clear inputs
+          tableNameInput.value = "";
+          searchGuestsInput.value = "";
+
+          // Reset view to table view
+          currentView = "table";
+          tableViewBtn.classList.add("active");
+          floorPlanViewBtn.classList.remove("active");
+
+          showNotification("All data has been reset");
+        }
+      });
+
+      // Trash area functionality
+      trashArea.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        trashArea.classList.add("active");
+      });
+
+      trashArea.addEventListener("dragleave", () => {
+        trashArea.classList.remove("active");
+      });
+
+      trashArea.addEventListener("drop", (e) => {
+        e.preventDefault();
+        const data = JSON.parse(e.dataTransfer.getData("text/plain"));
+
+        // Find and remove the guest
+        const sourceElements = [
+          ...document.querySelectorAll(".guest-item, .table-card ul li"),
+        ];
+        sourceElements.forEach((el) => {
+          if (el.dataset.name === data.name) {
+            el.remove();
+          }
+        });
+
+        // Remove from data model
+        weddingData.guests = weddingData.guests.filter(
+          (g) => g.name !== data.name
+        );
+
+        // Remove from tables
+        weddingData.tables.forEach((table) => {
+          if (table.guests) {
+            table.guests = table.guests.filter((g) => g !== data.name);
+          }
+        });
+
+        saveData();
+        updateGuestCount();
+        trashArea.classList.remove("active");
+        showNotification(`${data.name} has been removed`);
+      });
+
+      // View toggle functionality
+      tableViewBtn.addEventListener("click", () => {
+        if (currentView === "table") return;
+        currentView = "table";
+        tableViewBtn.classList.add("active");
+        floorPlanViewBtn.classList.remove("active");
+
+        // Restore tables container
+        const rightPanel = document.querySelector(".right-panel .panel");
+        const floorPlan = rightPanel.querySelector(".floor-plan");
+        if (floorPlan) {
+          rightPanel.replaceChild(tablesContainer, floorPlan);
+          // Rebuild the tables container from the data model
+          rebuildTablesContainer();
+        }
+        showNotification("Switched to table view");
+      });
+
+      floorPlanViewBtn.addEventListener("click", () => {
+        if (currentView === "floorPlan") return;
+        currentView = "floorPlan";
+        floorPlanViewBtn.classList.add("active");
+        tableViewBtn.classList.remove("active");
+
+        // Create floor plan container
+        const floorPlan = document.createElement("div");
+        floorPlan.className = "floor-plan";
+
+        // Add instructions
+        const instructions = document.createElement("div");
+        instructions.className = "floor-plan-instructions";
+        instructions.innerHTML =
+          '<i class="fas fa-info-circle"></i> Drag tables to reposition them';
+        floorPlan.appendChild(instructions);
+
+        // Add venue outline
+        const venue = document.createElement("div");
+        venue.style.position = "absolute";
+        venue.style.top = "20px";
+        venue.style.left = "20px";
+        venue.style.right = "20px";
+        venue.style.bottom = "20px";
+        venue.style.border = "2px dashed #d4a5a5";
+        venue.style.borderRadius = "10px";
+        floorPlan.appendChild(venue);
+
+        // Add stage area
+        const stage = document.createElement("div");
+        stage.style.position = "absolute";
+        stage.style.top = "20px";
+        stage.style.left = "50%";
+        stage.style.transform = "translateX(-50%)";
+        stage.style.width = "200px";
+        stage.style.height = "40px";
+        stage.style.backgroundColor = "#d4a5a5";
+        stage.style.borderRadius = "20px";
+        stage.style.display = "flex";
+        stage.style.alignItems = "center";
+        stage.style.justifyContent = "center";
+        stage.style.color = "white";
+        stage.style.fontWeight = "bold";
+        stage.textContent = "Stage";
+        venue.appendChild(stage);
+
+        // Add tables to floor plan
+        tables.forEach((table, index) => {
+          const tableName = table.querySelector("h3").textContent;
+          const guestCount = table.querySelector(".guest-count").textContent;
+
+          // Get saved position or use default
+          const position = tablePositions[tableName] || { top: 100, left: 50 };
+
+          const tableElement = document.createElement("div");
+          tableElement.className = "floor-plan-table";
+          tableElement.style.position = "absolute";
+          tableElement.style.top = `${position.top}px`;
+          tableElement.style.left = `${position.left}px`;
+          tableElement.dataset.tableName = tableName;
+
+          // Add table content
+          tableElement.innerHTML = `
+            <div class="floor-plan-table-name">${tableName}</div>
+            <div class="floor-plan-table-count">${guestCount}/12</div>
+          `;
+
+          // Add delete button
+          const deleteBtn = document.createElement("button");
+          deleteBtn.className = "floor-plan-delete-table";
+          deleteBtn.innerHTML = '<i class="fas fa-times"></i>';
+          deleteBtn.addEventListener("click", () => {
+            if (confirm(`Are you sure you want to delete ${tableName}?`)) {
+              // Remove from data model
+              const tableIndex = weddingData.tables.findIndex(
+                (t) => t.name === tableName
+              );
+              if (tableIndex !== -1) {
+                weddingData.tables.splice(tableIndex, 1);
+                delete weddingData.tablePositions[tableName];
+                saveData();
+
+                // Renumber tables after deletion
+                renumberTables();
+              }
+
+              // Remove from tables array
+              tables = tables.filter(
+                (t) => t.querySelector("h3").textContent !== tableName
+              );
+              tableElement.remove();
+              showNotification(`Table "${tableName}" deleted`);
+
+              // Show empty state if no tables
+              if (document.querySelectorAll(".floor-plan-table").length === 0) {
+                const emptyState = document.createElement("div");
+                emptyState.className = "empty-state";
+                emptyState.style.position = "absolute";
+                emptyState.style.top = "50%";
+                emptyState.style.left = "50%";
+                emptyState.style.transform = "translate(-50%, -50%)";
+                emptyState.innerHTML = `
+                  <i class="fas fa-chair"></i>
+                  <p>No tables created yet. Add your first table to get started!</p>
+                `;
+                venue.appendChild(emptyState);
+              }
+            }
+          });
+          tableElement.appendChild(deleteBtn);
+
+          // Make table draggable
+          let isDragging = false;
+          let startX, startY, initialLeft, initialTop;
+
+          tableElement.addEventListener("mousedown", (e) => {
+            // Don't start dragging if clicking on delete button
+            if (e.target.closest(".floor-plan-delete-table")) return;
+
+            isDragging = true;
+            tableElement.classList.add("dragging");
+            startX = e.clientX;
+            startY = e.clientY;
+            initialLeft = parseInt(tableElement.style.left);
+            initialTop = parseInt(tableElement.style.top);
+            e.preventDefault();
+          });
+
+          document.addEventListener("mousemove", (e) => {
+            if (!isDragging) return;
+
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+
+            let newLeft = initialLeft + dx;
+            let newTop = initialTop + dy;
+
+            // Boundary constraints
+            const venueRect = venue.getBoundingClientRect();
+            const tableRect = tableElement.getBoundingClientRect();
+            const floorPlanRect = floorPlan.getBoundingClientRect();
+
+            // Convert to relative position
+            const venueLeft = venueRect.left - floorPlanRect.left;
+            const venueTop = venueRect.top - floorPlanRect.top;
+            const venueRight = venueLeft + venueRect.width;
+            const venueBottom = venueTop + venueRect.height;
+
+            // Keep table within venue boundaries
+            newLeft = Math.max(
+              venueLeft,
+              Math.min(newLeft, venueRight - tableRect.width)
+            );
+            newTop = Math.max(
+              venueTop,
+              Math.min(newTop, venueBottom - tableRect.height)
+            );
+
+            tableElement.style.left = `${newLeft}px`;
+            tableElement.style.top = `${newTop}px`;
+          });
+
+          document.addEventListener("mouseup", () => {
+            if (isDragging) {
+              isDragging = false;
+              tableElement.classList.remove("dragging");
+
+              // Save the new position
+              tablePositions[tableName] = {
+                left: parseInt(tableElement.style.left),
+                top: parseInt(tableElement.style.top),
+              };
+              weddingData.tablePositions = tablePositions;
+              saveData();
+            }
+          });
+
+          venue.appendChild(tableElement);
+        });
+
+        // Replace tables container with floor plan
+        const rightPanel = document.querySelector(".right-panel .panel");
+        rightPanel.replaceChild(floorPlan, tablesContainer);
+        showNotification(
+          "Switched to floor plan view. Drag tables to reposition them."
+        );
+      });
+
+      // Initialize empty states
+      emptyGuestList.style.display = "flex";
+      emptyTables.style.display = "flex";
+
+      // Load data when page loads
+      document.addEventListener("DOMContentLoaded", loadData);
+    </script>
+  </body>
+</html>

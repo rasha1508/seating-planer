@@ -259,26 +259,6 @@
         background-color: rgba(211, 211, 211, 0.3);
         color: #6c757d;
       }
-      .edit-guest,
-      .delete-guest {
-        background: none;
-        border: none;
-        color: var(--primary-color);
-        cursor: pointer;
-        font-size: 12px;
-        padding: 0;
-        width: 24px;
-        height: 24px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 50%;
-        transition: all 0.3s;
-      }
-      .edit-guest:hover,
-      .delete-guest:hover {
-        background-color: rgba(212, 165, 165, 0.1);
-      }
       /* View Toggle */
       .view-toggle {
         display: flex;
@@ -884,7 +864,6 @@
       <i class="fas fa-check-circle"></i>
       <span id="notificationText">Notification text</span>
     </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script>
       // Initialize data from localStorage or set defaults
       let weddingData = {
@@ -892,30 +871,110 @@
         tables: [],
         tablePositions: {},
       };
-
+      
       // DOM Elements
-      const tablesContainer = document.getElementById("tablesContainer");
-      const addTableBtn = document.getElementById("addTable");
-      const guestList = document.getElementById("guestList");
-      const exportPDFBtn = document.getElementById("exportPDF");
-      const generatePlaceCardsBtn =
-        document.getElementById("generatePlaceCards");
-      const resetAllBtn = document.getElementById("resetAll");
-      const tableNameInput = document.getElementById("tableNameInput");
-      const searchGuestsInput = document.getElementById("searchGuests");
-      const fab = document.getElementById("fab");
-      const fabMenu = document.getElementById("fabMenu");
-      const emptyGuestList = document.getElementById("emptyGuestList");
-      const emptyTables = document.getElementById("emptyTables");
-      const notification = document.getElementById("notification");
-      const notificationText = document.getElementById("notificationText");
-      const trashArea = document.getElementById("trashArea");
-      const tableViewBtn = document.getElementById("tableView");
-      const floorPlanViewBtn = document.getElementById("floorPlanView");
-
+      let tablesContainer, addTableBtn, guestList, exportPDFBtn, generatePlaceCardsBtn, resetAllBtn;
+      let tableNameInput, searchGuestsInput, fab, fabMenu, emptyGuestList, emptyTables;
+      let notification, notificationText, trashArea, tableViewBtn, floorPlanViewBtn;
+      
       let tables = [];
       let currentView = "table";
       let tablePositions = {};
+
+      // Initialize the application
+      function initApp() {
+        // Get DOM elements
+        tablesContainer = document.getElementById("tablesContainer");
+        addTableBtn = document.getElementById("addTable");
+        guestList = document.getElementById("guestList");
+        exportPDFBtn = document.getElementById("exportPDF");
+        generatePlaceCardsBtn = document.getElementById("generatePlaceCards");
+        resetAllBtn = document.getElementById("resetAll");
+        tableNameInput = document.getElementById("tableNameInput");
+        searchGuestsInput = document.getElementById("searchGuests");
+        fab = document.getElementById("fab");
+        fabMenu = document.getElementById("fabMenu");
+        emptyGuestList = document.getElementById("emptyGuestList");
+        emptyTables = document.getElementById("emptyTables");
+        notification = document.getElementById("notification");
+        notificationText = document.getElementById("notificationText");
+        trashArea = document.getElementById("trashArea");
+        tableViewBtn = document.getElementById("tableView");
+        floorPlanViewBtn = document.getElementById("floorPlanView");
+
+        // Load data from localStorage if available
+        loadData();
+
+        // Attach event listeners
+        if (addTableBtn) {
+          addTableBtn.addEventListener("click", addTable);
+        }
+        if (exportPDFBtn) {
+          exportPDFBtn.addEventListener("click", exportSeatingChartPDF);
+        }
+        if (generatePlaceCardsBtn) {
+          generatePlaceCardsBtn.addEventListener("click", generatePlaceCardsPDF);
+        }
+        if (resetAllBtn) {
+          resetAllBtn.addEventListener("click", resetAll);
+        }
+        if (searchGuestsInput) {
+          searchGuestsInput.addEventListener("input", searchGuests);
+        }
+        if (fab) {
+          fab.addEventListener("click", toggleFabMenu);
+        }
+        if (tableViewBtn) {
+          tableViewBtn.addEventListener("click", switchToTableView);
+        }
+        if (floorPlanViewBtn) {
+          floorPlanViewBtn.addEventListener("click", switchToFloorPlanView);
+        }
+
+        // Trash area functionality
+        if (trashArea) {
+          trashArea.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            trashArea.classList.add("active");
+          });
+          
+          trashArea.addEventListener("dragleave", () => {
+            trashArea.classList.remove("active");
+          });
+          
+          trashArea.addEventListener("drop", (e) => {
+            e.preventDefault();
+            const data = JSON.parse(e.dataTransfer.getData("text/plain"));
+            
+            // Find and remove the guest
+            const sourceElements = [
+              ...document.querySelectorAll(".guest-item, .table-card ul li"),
+            ];
+            sourceElements.forEach((el) => {
+              if (el.dataset.name === data.name) {
+                el.remove();
+              }
+            });
+            
+            // Remove from data model
+            weddingData.guests = weddingData.guests.filter(
+              (g) => g.name !== data.name
+            );
+            
+            // Remove from tables
+            weddingData.tables.forEach((table) => {
+              if (table.guests) {
+                table.guests = table.guests.filter((g) => g !== data.name);
+              }
+            });
+            
+            saveData();
+            updateGuestCount();
+            trashArea.classList.remove("active");
+            showNotification(`${data.name} has been removed`);
+          });
+        }
+      }
 
       // Load data from localStorage if available
       function loadData() {
@@ -1020,32 +1079,40 @@
       function renderData() {
         console.log("Rendering data...");
         // Clear existing data
-        guestList.innerHTML = "";
-        tablesContainer.innerHTML = "";
+        if (guestList) {
+          guestList.innerHTML = "";
+        }
+        if (tablesContainer) {
+          tablesContainer.innerHTML = "";
+        }
         tables = [];
-
+        
         // Add empty states
-        guestList.appendChild(emptyGuestList);
-        tablesContainer.appendChild(emptyTables);
-
+        if (guestList && emptyGuestList) {
+          guestList.appendChild(emptyGuestList);
+        }
+        if (tablesContainer && emptyTables) {
+          tablesContainer.appendChild(emptyTables);
+        }
+        
         // Render unassigned guests
         if (weddingData.guests && weddingData.guests.length > 0) {
           console.log("Rendering guests:", weddingData.guests.length);
-
+          
           // Create a set of all assigned guests
           const assignedGuests = new Set();
-          weddingData.tables.forEach((table) => {
+          weddingData.tables.forEach(table => {
             if (table.guests) {
-              table.guests.forEach((guest) => assignedGuests.add(guest));
+              table.guests.forEach(guest => assignedGuests.add(guest));
             }
           });
-
+          
           // Only show unassigned guests
           const unassignedGuests = weddingData.guests.filter(
-            (guest) => !assignedGuests.has(guest.name)
+            guest => !assignedGuests.has(guest.name)
           );
-
-          if (unassignedGuests.length > 0) {
+          
+          if (unassignedGuests.length > 0 && emptyGuestList) {
             emptyGuestList.style.display = "none";
             unassignedGuests.forEach((guest) => {
               // Add to guest list
@@ -1072,20 +1139,26 @@
                     rsvp: guest.rsvp,
                   })
                 );
-                trashArea.classList.add("active");
+                if (trashArea) {
+                  trashArea.classList.add("active");
+                }
               });
               guestItem.addEventListener("dragend", () => {
-                trashArea.classList.remove("active");
+                if (trashArea) {
+                  trashArea.classList.remove("active");
+                }
               });
               guestList.appendChild(guestItem);
             });
           }
         }
-
+        
         // Render tables
         if (weddingData.tables && weddingData.tables.length > 0) {
           console.log("Rendering tables:", weddingData.tables.length);
-          emptyTables.style.display = "none";
+          if (emptyTables) {
+            emptyTables.style.display = "none";
+          }
           weddingData.tables.forEach((table, index) => {
             createTable(index + 1, table.name, false);
             // Add guests to table
@@ -1123,10 +1196,14 @@
                       "text/plain",
                       JSON.stringify(guestData)
                     );
-                    trashArea.classList.add("active");
+                    if (trashArea) {
+                      trashArea.classList.add("active");
+                    }
                   });
                   li.addEventListener("dragend", () => {
-                    trashArea.classList.remove("active");
+                    if (trashArea) {
+                      trashArea.classList.remove("active");
+                    }
                   });
                   ul.appendChild(li);
                 }
@@ -1135,48 +1212,58 @@
             updateGuestCount();
           });
         }
-
+        
         // Update table positions
         tablePositions = weddingData.tablePositions || {};
       }
 
       // Show notification
       function showNotification(message, type = "success") {
-        notificationText.textContent = message;
-        notification.className = "notification show";
-        if (type === "success") {
-          notification.classList.add("success");
-          notification.querySelector("i").className = "fas fa-check-circle";
-        } else if (type === "error") {
-          notification.classList.add("error");
-          notification.querySelector("i").className =
-            "fas fa-exclamation-circle";
+        if (notification && notificationText) {
+          notificationText.textContent = message;
+          notification.className = "notification show";
+          if (type === "success") {
+            notification.classList.add("success");
+            notification.querySelector("i").className = "fas fa-check-circle";
+          } else if (type === "error") {
+            notification.classList.add("error");
+            notification.querySelector("i").className =
+              "fas fa-exclamation-circle";
+          }
+          setTimeout(() => {
+            notification.classList.remove("show");
+          }, 3000);
         }
-        setTimeout(() => {
-          notification.classList.remove("show");
-        }, 3000);
       }
 
       // Toggle FAB menu
-      fab.addEventListener("click", () => {
-        fabMenu.classList.toggle("show");
-        fab.querySelector("i").classList.toggle("fa-plus");
-        fab.querySelector("i").classList.toggle("fa-times");
-      });
+      function toggleFabMenu() {
+        if (fabMenu) {
+          fabMenu.classList.toggle("show");
+          if (fab) {
+            fab.querySelector("i").classList.toggle("fa-plus");
+            fab.querySelector("i").classList.toggle("fa-times");
+          }
+        }
+      }
 
       // Function to rebuild tables container from data model
       function rebuildTablesContainer() {
         // Clear the tables container
-        tablesContainer.innerHTML = "";
+        if (tablesContainer) {
+          tablesContainer.innerHTML = "";
+        }
         tables = [];
-
+        
         // If no tables, show empty state
         if (weddingData.tables.length === 0) {
-          tablesContainer.appendChild(emptyTables);
-          emptyTables.style.display = "flex";
+          if (tablesContainer && emptyTables) {
+            tablesContainer.appendChild(emptyTables);
+            emptyTables.style.display = "flex";
+          }
           return;
         }
-
+        
         // Rebuild each table
         weddingData.tables.forEach((tableData, index) => {
           // Create a new table element for table view
@@ -1195,7 +1282,7 @@
           table.appendChild(header);
           const ul = document.createElement("ul");
           table.appendChild(ul);
-
+          
           // Add guests to the table
           if (tableData.guests && tableData.guests.length > 0) {
             tableData.guests.forEach((guestName) => {
@@ -1228,26 +1315,32 @@
                     "text/plain",
                     JSON.stringify(guestData)
                   );
-                  trashArea.classList.add("active");
+                  if (trashArea) {
+                    trashArea.classList.add("active");
+                  }
                 });
                 li.addEventListener("dragend", () => {
-                  trashArea.classList.remove("active");
+                  if (trashArea) {
+                    trashArea.classList.remove("active");
+                  }
                 });
                 ul.appendChild(li);
               }
             });
           }
-
+          
           // Add drop event listener
           table.addEventListener("dragover", (e) => {
             e.preventDefault();
-            trashArea.classList.remove("active");
+            if (trashArea) {
+              trashArea.classList.remove("active");
+            }
           });
-
+          
           table.addEventListener("drop", (e) => {
             e.preventDefault();
             const data = JSON.parse(e.dataTransfer.getData("text/plain"));
-
+            
             // Check if table is full
             const currentGuests = ul.querySelectorAll("li").length;
             if (currentGuests >= 12) {
@@ -1257,7 +1350,7 @@
               );
               return;
             }
-
+            
             // Remove from guest list or other tables
             const sourceElements = [
               ...document.querySelectorAll(".guest-item, .table-card ul li"),
@@ -1267,7 +1360,7 @@
                 el.remove();
               }
             });
-
+            
             // Create guest element
             const li = document.createElement("li");
             const displayName =
@@ -1289,13 +1382,17 @@
             );
             li.addEventListener("dragstart", (ev) => {
               ev.dataTransfer.setData("text/plain", JSON.stringify(data));
-              trashArea.classList.add("active");
+              if (trashArea) {
+                trashArea.classList.add("active");
+              }
             });
             li.addEventListener("dragend", () => {
-              trashArea.classList.remove("active");
+              if (trashArea) {
+                trashArea.classList.remove("active");
+              }
             });
             ul.appendChild(li);
-
+            
             // Update data model
             const tableName = title.textContent;
             const tableIndex = weddingData.tables.findIndex(
@@ -1308,15 +1405,17 @@
               weddingData.tables[tableIndex].guests.push(data.name);
               saveData();
             }
-
+            
             updateGuestCount();
             showNotification(`${data.name} seated at ${title.textContent}`);
           });
-
-          tablesContainer.appendChild(table);
+          
+          if (tablesContainer) {
+            tablesContainer.appendChild(table);
+          }
           tables.push(table);
         });
-
+        
         updateGuestCount();
       }
 
@@ -1337,23 +1436,25 @@
         table.appendChild(header);
         const ul = document.createElement("ul");
         table.appendChild(ul);
-
+        
         table.addEventListener("dragover", (e) => {
           e.preventDefault();
-          trashArea.classList.remove("active");
+          if (trashArea) {
+            trashArea.classList.remove("active");
+          }
         });
-
+        
         table.addEventListener("drop", (e) => {
           e.preventDefault();
           const data = JSON.parse(e.dataTransfer.getData("text/plain"));
-
+          
           // Check if table is full
           const currentGuests = ul.querySelectorAll("li").length;
           if (currentGuests >= 12) {
             showNotification("Table capacity reached (12 guests max)", "error");
             return;
           }
-
+          
           // Remove from guest list or other tables
           const sourceElements = [
             ...document.querySelectorAll(".guest-item, .table-card ul li"),
@@ -1363,7 +1464,7 @@
               el.remove();
             }
           });
-
+          
           // Create guest element
           const li = document.createElement("li");
           // Truncate long names to fit in circle
@@ -1386,13 +1487,17 @@
           );
           li.addEventListener("dragstart", (ev) => {
             ev.dataTransfer.setData("text/plain", JSON.stringify(data));
-            trashArea.classList.add("active");
+            if (trashArea) {
+              trashArea.classList.add("active");
+            }
           });
           li.addEventListener("dragend", () => {
-            trashArea.classList.remove("active");
+            if (trashArea) {
+              trashArea.classList.remove("active");
+            }
           });
           ul.appendChild(li);
-
+          
           // Update data model
           const tableName = title.textContent;
           const tableIndex = weddingData.tables.findIndex(
@@ -1405,14 +1510,16 @@
             weddingData.tables[tableIndex].guests.push(data.name);
             saveData();
           }
-
+          
           updateGuestCount();
           showNotification(`${data.name} seated at ${title.textContent}`);
         });
-
-        tablesContainer.appendChild(table);
+        
+        if (tablesContainer) {
+          tablesContainer.appendChild(table);
+        }
         tables.push(table);
-
+        
         // Add to data model
         if (saveToData) {
           weddingData.tables.push({
@@ -1421,15 +1528,17 @@
           });
           saveData();
         }
-
+        
         // Initialize position for floor plan with calculated position
         const position = calculateNewTablePosition();
         tablePositions[title.textContent] = position;
         weddingData.tablePositions = tablePositions;
         saveData();
-
+        
         // Hide empty state if visible
-        emptyTables.style.display = "none";
+        if (emptyTables) {
+          emptyTables.style.display = "none";
+        }
         showNotification(`Table "${title.textContent}" created`);
       }
 
@@ -1438,12 +1547,14 @@
         tables.forEach((table) => {
           const count = table.querySelector("ul").querySelectorAll("li").length;
           const countElement = table.querySelector(".guest-count");
-          countElement.textContent = count;
-
+          if (countElement) {
+            countElement.textContent = count;
+          }
+          
           // Update capacity indicator
           const capacity = 12; // Maximum guests per table
           const percentage = (count / capacity) * 100;
-
+          
           // Remove existing capacity classes
           table.classList.remove(
             "low-capacity",
@@ -1451,7 +1562,7 @@
             "high-capacity",
             "full-capacity"
           );
-
+          
           // Add appropriate capacity class
           if (percentage === 0) {
             // No capacity class needed
@@ -1467,16 +1578,20 @@
         });
       }
 
-      // Event listeners
-      addTableBtn.addEventListener("click", () => {
+      // Event handlers
+      function addTable() {
+        if (!tableNameInput) return;
         const tableName = tableNameInput.value.trim();
         createTable(tables.length + 1, tableName);
-        tableNameInput.value = "";
-      });
+        if (tableNameInput) {
+          tableNameInput.value = "";
+        }
+      }
 
-      // Search guests
-      searchGuestsInput.addEventListener("input", (e) => {
+      function searchGuests(e) {
         const searchTerm = e.target.value.toLowerCase();
+        if (!guestList) return;
+        
         const guestItems = guestList.querySelectorAll(".guest-item");
         guestItems.forEach((item) => {
           const name = item.dataset.name.toLowerCase();
@@ -1487,470 +1602,198 @@
             item.style.display = "none";
           }
         });
-      });
+      }
 
       // Export PDF
-      exportPDFBtn.addEventListener("click", () => {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        let y = 20;
-
-        doc.setFont("Playfair Display", "normal");
-        doc.setFontSize(22);
-        doc.text("Wedding Seating Chart", 105, y, { align: "center" });
-        y += 15;
-
-        doc.setFont("Inter", "normal");
-        doc.setFontSize(12);
-        doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 105, y, {
-          align: "center",
-        });
-        y += 15;
-
-        // Add unassigned guests
-        const unassigned = Array.from(
-          guestList.querySelectorAll(".guest-item")
-        );
-        if (unassigned.length > 0) {
-          if (y > 250) {
-            doc.addPage();
-            y = 20;
-          }
-          doc.setFont("Playfair Display", "normal");
-          doc.setFontSize(16);
-          doc.text("Unassigned Guests", 20, y);
-          y += 8;
-          doc.setFont("Inter", "normal");
-          doc.setFontSize(12);
-          unassigned.forEach((item) => {
-            if (y > 270) {
-              doc.addPage();
-              y = 20;
-            }
-            doc.text(
-              `- ${item.dataset.name} (${item.dataset.side}, ${item.dataset.rsvp})`,
-              25,
-              y
+      function exportSeatingChartPDF() {
+        try {
+          // Create a simple text export
+          let seatingChartText = "Wedding Seating Chart\n";
+          seatingChartText += `Generated on: ${new Date().toLocaleDateString()}\n\n`;
+          
+          // Add unassigned guests
+          if (guestList) {
+            const unassigned = Array.from(
+              guestList.querySelectorAll(".guest-item")
             );
-            y += 6;
-          });
-          y += 10;
-        }
-
-        if (tables.length === 0) {
-          if (y > 250) {
-            doc.addPage();
-            y = 20;
-          }
-          doc.setFontSize(14);
-          doc.text("No tables created yet.", 105, y, { align: "center" });
-        } else {
-          tables.forEach((table) => {
-            if (y > 250) {
-              doc.addPage();
-              y = 20;
+            if (unassigned.length > 0) {
+              seatingChartText += "Unassigned Guests\n";
+              unassigned.forEach((item) => {
+                seatingChartText += `- ${item.dataset.name} (${item.dataset.side}, ${item.dataset.rsvp})\n`;
+              });
+              seatingChartText += "\n";
             }
-            const tableName = table.querySelector("h3").textContent;
-            const guests = table.querySelectorAll("li");
-            doc.setFont("Playfair Display", "normal");
-            doc.setFontSize(16);
-            doc.text(tableName, 20, y);
-            y += 8;
-            doc.setFont("Inter", "normal");
-            doc.setFontSize(12);
-            doc.text(`Guests: ${guests.length}`, 20, y);
-            y += 8;
-            guests.forEach((g) => {
-              if (y > 270) {
-                doc.addPage();
-                y = 20;
-              }
-              doc.text(
-                `- ${g.dataset.fullname} (${g.dataset.side}, ${g.dataset.rsvp})`,
-                25,
-                y
-              );
-              y += 6;
+          }
+          
+          if (tables.length === 0) {
+            seatingChartText += "No tables created yet.\n";
+          } else {
+            tables.forEach((table) => {
+              const tableName = table.querySelector("h3").textContent;
+              const guests = table.querySelectorAll("li");
+              seatingChartText += `${tableName}\n`;
+              seatingChartText += `Guests: ${guests.length}\n`;
+              guests.forEach((g) => {
+                seatingChartText += `- ${g.dataset.fullname} (${g.dataset.side}, ${g.dataset.rsvp})\n`;
+              });
+              seatingChartText += "\n";
             });
-            y += 10;
-          });
+          }
+          
+          // Create a Blob with the text content
+          const blob = new Blob([seatingChartText], { type: 'text/plain' });
+          
+          // Create a temporary link to download the file
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = 'Wedding-Seating-Chart.txt';
+          
+          // Programmatically click the link to trigger download
+          document.body.appendChild(a);
+          a.click();
+          
+          // Clean up
+          setTimeout(() => {
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(a.href);
+          }, 100);
+          
+          showNotification("Seating chart exported successfully");
+        } catch (error) {
+          console.error("Error generating seating chart:", error);
+          showNotification("Error generating seating chart. Please try again.", "error");
         }
-
-        doc.save("Wedding-Seating-Chart.pdf");
-        showNotification("Seating chart exported successfully");
-      });
+      }
 
       // Generate Place Cards
-      generatePlaceCardsBtn.addEventListener("click", () => {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-
-        // Set up page dimensions
-        const pageWidth = doc.internal.pageSize.width;
-        const pageHeight = doc.internal.pageSize.height;
-
-        // Place card dimensions
-        const cardWidth = 90;
-        const cardHeight = 50;
-        const margin = 15;
-
-        // Track position
-        let x = margin;
-        let y = margin;
-        let cardCount = 0;
-
-        // Add title
-        doc.setFont("Playfair Display", "normal");
-        doc.setFontSize(18);
-        doc.text("Wedding Place Cards", pageWidth / 2, 10, { align: "center" });
-
-        // Generate place cards for all seated guests
-        tables.forEach((table) => {
-          const tableName = table.querySelector("h3").textContent;
-          const guests = table.querySelectorAll("li");
-          guests.forEach((guest) => {
-            // Check if we need a new page
-            if (y + cardHeight > pageHeight - margin) {
-              doc.addPage();
-              y = margin;
-            }
-
-            // Draw card border
-            doc.setDrawColor(212, 165, 165);
-            doc.setLineWidth(0.5);
-            doc.rect(x, y, cardWidth, cardHeight);
-
-            // Add guest name
-            doc.setFont("Playfair Display", "normal");
-            doc.setFontSize(14);
-            doc.text(guest.dataset.fullname, x + cardWidth / 2, y + 20, {
-              align: "center",
+      function generatePlaceCardsPDF() {
+        try {
+          // Create a simple text export
+          let placeCardsText = "Wedding Place Cards\n";
+          placeCardsText += `Generated on: ${new Date().toLocaleDateString()}\n\n`;
+          
+          let cardCount = 0;
+          // Generate place cards for all seated guests
+          tables.forEach((table) => {
+            const tableName = table.querySelector("h3").textContent;
+            const guests = table.querySelectorAll("li");
+            guests.forEach((guest) => {
+              placeCardsText += `Card ${cardCount + 1}\n`;
+              placeCardsText += `Guest: ${guest.dataset.fullname}\n`;
+              placeCardsText += `Table: ${tableName}\n\n`;
+              cardCount++;
             });
-
-            // Add table name
-            doc.setFont("Inter", "normal");
-            doc.setFontSize(10);
-            doc.text(`Table: ${tableName}`, x + cardWidth / 2, y + 35, {
-              align: "center",
-            });
-
-            // Update position
-            x += cardWidth + margin;
-            cardCount++;
-
-            // Move to next row if needed
-            if (x + cardWidth > pageWidth - margin) {
-              x = margin;
-              y += cardHeight + margin;
-            }
           });
-        });
-
-        if (cardCount === 0) {
-          doc.setFontSize(14);
-          doc.text("No seated guests found.", pageWidth / 2, pageHeight / 2, {
-            align: "center",
-          });
+          
+          if (cardCount === 0) {
+            placeCardsText += "No seated guests found.\n";
+          }
+          
+          // Create a Blob with the text content
+          const blob = new Blob([placeCardsText], { type: 'text/plain' });
+          
+          // Create a temporary link to download the file
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = 'Wedding-Place-Cards.txt';
+          
+          // Programmatically click the link to trigger download
+          document.body.appendChild(a);
+          a.click();
+          
+          // Clean up
+          setTimeout(() => {
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(a.href);
+          }, 100);
+          
+          showNotification("Place cards generated successfully");
+        } catch (error) {
+          console.error("Error generating place cards:", error);
+          showNotification("Error generating place cards. Please try again.", "error");
         }
+      }
 
-        doc.save("Wedding-Place-Cards.pdf");
-        showNotification("Place cards generated successfully");
-      });
-
-      // Reset all data
-      resetAllBtn.addEventListener("click", () => {
-        if (
-          confirm(
-            "Are you sure you want to reset all data? This cannot be undone."
-          )
-        ) {
-          // Clear data model
-          weddingData = {
-            guests: [],
-            tables: [],
-            tablePositions: {},
-          };
-          saveData();
-
-          // Clear guest list
+      // Reset all data - NO CONFIRMATION
+      function resetAll() {
+        // Clear data model
+        weddingData = {
+          guests: [],
+          tables: [],
+          tablePositions: {},
+        };
+        saveData();
+        
+        // Clear guest list
+        if (guestList && emptyGuestList) {
           guestList.innerHTML = "";
           guestList.appendChild(emptyGuestList);
           emptyGuestList.style.display = "flex";
-
-          // Clear tables
+        }
+        
+        // Clear tables
+        if (tablesContainer) {
           tablesContainer.innerHTML = "";
-          tables = [];
-          tablePositions = {};
+        }
+        tables = [];
+        tablePositions = {};
+        if (tablesContainer && emptyTables) {
           tablesContainer.appendChild(emptyTables);
           emptyTables.style.display = "flex";
-
-          // Clear inputs
+        }
+        
+        // Clear inputs
+        if (tableNameInput) {
           tableNameInput.value = "";
+        }
+        if (searchGuestsInput) {
           searchGuestsInput.value = "";
-
-          // Reset view to table view
-          currentView = "table";
+        }
+        
+        // Reset view to table view
+        currentView = "table";
+        if (tableViewBtn && floorPlanViewBtn) {
           tableViewBtn.classList.add("active");
           floorPlanViewBtn.classList.remove("active");
-
-          showNotification("All data has been reset");
         }
-      });
-
-      // Trash area functionality
-      trashArea.addEventListener("dragover", (e) => {
-        e.preventDefault();
-        trashArea.classList.add("active");
-      });
-
-      trashArea.addEventListener("dragleave", () => {
-        trashArea.classList.remove("active");
-      });
-
-      trashArea.addEventListener("drop", (e) => {
-        e.preventDefault();
-        const data = JSON.parse(e.dataTransfer.getData("text/plain"));
-
-        // Find and remove the guest
-        const sourceElements = [
-          ...document.querySelectorAll(".guest-item, .table-card ul li"),
-        ];
-        sourceElements.forEach((el) => {
-          if (el.dataset.name === data.name) {
-            el.remove();
-          }
-        });
-
-        // Remove from data model
-        weddingData.guests = weddingData.guests.filter(
-          (g) => g.name !== data.name
-        );
-
-        // Remove from tables
-        weddingData.tables.forEach((table) => {
-          if (table.guests) {
-            table.guests = table.guests.filter((g) => g !== data.name);
-          }
-        });
-
-        saveData();
-        updateGuestCount();
-        trashArea.classList.remove("active");
-        showNotification(`${data.name} has been removed`);
-      });
+        
+        showNotification("All data has been reset");
+      }
 
       // View toggle functionality
-      tableViewBtn.addEventListener("click", () => {
+      function switchToTableView() {
         if (currentView === "table") return;
         currentView = "table";
-        tableViewBtn.classList.add("active");
-        floorPlanViewBtn.classList.remove("active");
-
+        if (tableViewBtn && floorPlanViewBtn) {
+          tableViewBtn.classList.add("active");
+          floorPlanViewBtn.classList.remove("active");
+        }
+        
         // Restore tables container
         const rightPanel = document.querySelector(".right-panel .panel");
         const floorPlan = rightPanel.querySelector(".floor-plan");
-        if (floorPlan) {
+        if (floorPlan && tablesContainer) {
           rightPanel.replaceChild(tablesContainer, floorPlan);
           // Rebuild the tables container from the data model
           rebuildTablesContainer();
         }
         showNotification("Switched to table view");
-      });
-
-      floorPlanViewBtn.addEventListener("click", () => {
+      }
+      
+      function switchToFloorPlanView() {
         if (currentView === "floorPlan") return;
         currentView = "floorPlan";
-        floorPlanViewBtn.classList.add("active");
-        tableViewBtn.classList.remove("active");
-
+        if (tableViewBtn && floorPlanViewBtn) {
+          floorPlanViewBtn.classList.add("active");
+          tableViewBtn.classList.remove("active");
+        }
+        
         // Create floor plan container
         const floorPlan = document.createElement("div");
         floorPlan.className = "floor-plan";
-
+        
         // Add instructions
         const instructions = document.createElement("div");
         instructions.className = "floor-plan-instructions";
         instructions.innerHTML =
-          '<i class="fas fa-info-circle"></i> Drag tables to reposition them';
-        floorPlan.appendChild(instructions);
-
-        // Add venue outline
-        const venue = document.createElement("div");
-        venue.style.position = "absolute";
-        venue.style.top = "20px";
-        venue.style.left = "20px";
-        venue.style.right = "20px";
-        venue.style.bottom = "20px";
-        venue.style.border = "2px dashed #d4a5a5";
-        venue.style.borderRadius = "10px";
-        floorPlan.appendChild(venue);
-
-        // Add stage area
-        const stage = document.createElement("div");
-        stage.style.position = "absolute";
-        stage.style.top = "20px";
-        stage.style.left = "50%";
-        stage.style.transform = "translateX(-50%)";
-        stage.style.width = "200px";
-        stage.style.height = "40px";
-        stage.style.backgroundColor = "#d4a5a5";
-        stage.style.borderRadius = "20px";
-        stage.style.display = "flex";
-        stage.style.alignItems = "center";
-        stage.style.justifyContent = "center";
-        stage.style.color = "white";
-        stage.style.fontWeight = "bold";
-        stage.textContent = "Stage";
-        venue.appendChild(stage);
-
-        // Add tables to floor plan
-        tables.forEach((table, index) => {
-          const tableName = table.querySelector("h3").textContent;
-          const guestCount = table.querySelector(".guest-count").textContent;
-
-          // Get saved position or use default
-          const position = tablePositions[tableName] || { top: 100, left: 50 };
-
-          const tableElement = document.createElement("div");
-          tableElement.className = "floor-plan-table";
-          tableElement.style.position = "absolute";
-          tableElement.style.top = `${position.top}px`;
-          tableElement.style.left = `${position.left}px`;
-          tableElement.dataset.tableName = tableName;
-
-          // Add table content
-          tableElement.innerHTML = `
-            <div class="floor-plan-table-name">${tableName}</div>
-            <div class="floor-plan-table-count">${guestCount}/12</div>
-          `;
-
-          // Add delete button
-          const deleteBtn = document.createElement("button");
-          deleteBtn.className = "floor-plan-delete-table";
-          deleteBtn.innerHTML = '<i class="fas fa-times"></i>';
-          deleteBtn.addEventListener("click", () => {
-            if (confirm(`Are you sure you want to delete ${tableName}?`)) {
-              // Remove from data model
-              const tableIndex = weddingData.tables.findIndex(
-                (t) => t.name === tableName
-              );
-              if (tableIndex !== -1) {
-                weddingData.tables.splice(tableIndex, 1);
-                delete weddingData.tablePositions[tableName];
-                saveData();
-
-                // Renumber tables after deletion
-                renumberTables();
-              }
-
-              // Remove from tables array
-              tables = tables.filter(
-                (t) => t.querySelector("h3").textContent !== tableName
-              );
-              tableElement.remove();
-              showNotification(`Table "${tableName}" deleted`);
-
-              // Show empty state if no tables
-              if (document.querySelectorAll(".floor-plan-table").length === 0) {
-                const emptyState = document.createElement("div");
-                emptyState.className = "empty-state";
-                emptyState.style.position = "absolute";
-                emptyState.style.top = "50%";
-                emptyState.style.left = "50%";
-                emptyState.style.transform = "translate(-50%, -50%)";
-                emptyState.innerHTML = `
-                  <i class="fas fa-chair"></i>
-                  <p>No tables created yet. Add your first table to get started!</p>
-                `;
-                venue.appendChild(emptyState);
-              }
-            }
-          });
-          tableElement.appendChild(deleteBtn);
-
-          // Make table draggable
-          let isDragging = false;
-          let startX, startY, initialLeft, initialTop;
-
-          tableElement.addEventListener("mousedown", (e) => {
-            // Don't start dragging if clicking on delete button
-            if (e.target.closest(".floor-plan-delete-table")) return;
-
-            isDragging = true;
-            tableElement.classList.add("dragging");
-            startX = e.clientX;
-            startY = e.clientY;
-            initialLeft = parseInt(tableElement.style.left);
-            initialTop = parseInt(tableElement.style.top);
-            e.preventDefault();
-          });
-
-          document.addEventListener("mousemove", (e) => {
-            if (!isDragging) return;
-
-            const dx = e.clientX - startX;
-            const dy = e.clientY - startY;
-
-            let newLeft = initialLeft + dx;
-            let newTop = initialTop + dy;
-
-            // Boundary constraints
-            const venueRect = venue.getBoundingClientRect();
-            const tableRect = tableElement.getBoundingClientRect();
-            const floorPlanRect = floorPlan.getBoundingClientRect();
-
-            // Convert to relative position
-            const venueLeft = venueRect.left - floorPlanRect.left;
-            const venueTop = venueRect.top - floorPlanRect.top;
-            const venueRight = venueLeft + venueRect.width;
-            const venueBottom = venueTop + venueRect.height;
-
-            // Keep table within venue boundaries
-            newLeft = Math.max(
-              venueLeft,
-              Math.min(newLeft, venueRight - tableRect.width)
-            );
-            newTop = Math.max(
-              venueTop,
-              Math.min(newTop, venueBottom - tableRect.height)
-            );
-
-            tableElement.style.left = `${newLeft}px`;
-            tableElement.style.top = `${newTop}px`;
-          });
-
-          document.addEventListener("mouseup", () => {
-            if (isDragging) {
-              isDragging = false;
-              tableElement.classList.remove("dragging");
-
-              // Save the new position
-              tablePositions[tableName] = {
-                left: parseInt(tableElement.style.left),
-                top: parseInt(tableElement.style.top),
-              };
-              weddingData.tablePositions = tablePositions;
-              saveData();
-            }
-          });
-
-          venue.appendChild(tableElement);
-        });
-
-        // Replace tables container with floor plan
-        const rightPanel = document.querySelector(".right-panel .panel");
-        rightPanel.replaceChild(floorPlan, tablesContainer);
-        showNotification(
-          "Switched to floor plan view. Drag tables to reposition them."
-        );
-      });
-
-      // Initialize empty states
-      emptyGuestList.style.display = "flex";
-      emptyTables.style.display = "flex";
-
-      // Load data when page loads
-      document.addEventListener("DOMContentLoaded", loadData);
-    </script>
-  </body>
-</html>
+          '<i class="fas
